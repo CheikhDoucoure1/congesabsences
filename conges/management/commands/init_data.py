@@ -29,21 +29,37 @@ class Command(BaseCommand):
 
         self.stdout.write('Création des types de congé...')
         types = {}
-        type_data = [
-            ('annuel', 'Congé annuel', '#2196F3', 'fa-umbrella-beach', 30, False),
-            ('maladie', 'Congé maladie', '#F44336', 'fa-hospital', 15, True),
-            ('maternite', 'Congé maternité', '#E91E63', 'fa-baby', 98, True),
-            ('paternite', 'Congé paternité', '#9C27B0', 'fa-baby-carriage', 5, False),
-            ('exceptionnel', 'Congé exceptionnel', '#FF9800', 'fa-star', 5, False),
-            ('sans_solde', 'Congé sans solde', '#607D8B', 'fa-money-bill-slash', 30, False),
-            ('recuperation', 'Récupération', '#4CAF50', 'fa-clock-rotate-left', 10, False),
-            ('absence', 'Absence autorisée', '#795548', 'fa-calendar-xmark', 3, False),
+        conge_data = [
+            ('annuel',    'Congé annuel',    '#2196F3', 'fa-umbrella-beach', 30, False),
+            ('maternite', 'Congé maternité', '#E91E63', 'fa-baby',           98, True),
+            ('astreinte', 'Astreintes',      '#FF9800', 'fa-clock',          30, False),
         ]
-        for code, libelle, couleur, icone, jours_max, justif in type_data:
+        for code, libelle, couleur, icone, jours_max, justif in conge_data:
             t, _ = TypeConge.objects.get_or_create(
                 code=code,
                 defaults={
                     'libelle': libelle,
+                    'categorie': 'conge',
+                    'couleur': couleur,
+                    'icone': icone,
+                    'jours_max': jours_max,
+                    'necessite_justificatif': justif,
+                }
+            )
+            types[code] = t
+
+        absence_data = [
+            ('abs_maladie',        'Absence maladie',                           '#F44336', 'fa-hospital',        15, True),
+            ('abs_sans_solde',     'Absence sans solde',                        '#607D8B', 'fa-money-bill-slash', 30, False),
+            ('abs_exceptionnelle', 'Absence exceptionnelle (événement familial)','#FF9800', 'fa-star',             5, True),
+            ('permission',         "Permission d'absence",                      '#9C27B0', 'fa-id-card',           3, False),
+        ]
+        for code, libelle, couleur, icone, jours_max, justif in absence_data:
+            t, _ = TypeConge.objects.get_or_create(
+                code=code,
+                defaults={
+                    'libelle': libelle,
+                    'categorie': 'absence',
                     'couleur': couleur,
                     'icone': icone,
                     'jours_max': jours_max,
@@ -95,13 +111,13 @@ class Command(BaseCommand):
 
         self.stdout.write('Création des soldes de congé...')
         balance_data = {
-            admin: {'annuel': (30, 0), 'maladie': (15, 0), 'exceptionnel': (5, 0), 'recuperation': (10, 0)},
-            drh: {'annuel': (30, 5), 'maladie': (15, 0), 'exceptionnel': (5, 1), 'recuperation': (10, 2)},
-            manager: {'annuel': (30, 8), 'maladie': (15, 3), 'exceptionnel': (5, 0), 'recuperation': (10, 5)},
-            employe: {'annuel': (30, 12), 'maladie': (15, 2), 'exceptionnel': (5, 0), 'recuperation': (10, 0)},
-            emp2: {'annuel': (30, 20), 'maladie': (15, 5), 'exceptionnel': (5, 2), 'recuperation': (10, 3)},
-            emp3: {'annuel': (30, 3), 'maladie': (15, 0), 'exceptionnel': (5, 0), 'recuperation': (10, 1)},
-            emp4: {'annuel': (30, 7), 'maladie': (15, 0), 'exceptionnel': (5, 1), 'recuperation': (10, 0)},
+            admin: {'annuel': (30, 0), 'astreinte': (30, 0)},
+            drh: {'annuel': (30, 5), 'astreinte': (30, 0)},
+            manager: {'annuel': (30, 8), 'astreinte': (30, 5)},
+            employe: {'annuel': (30, 12), 'astreinte': (30, 0)},
+            emp2: {'annuel': (30, 20), 'astreinte': (30, 3)},
+            emp3: {'annuel': (30, 3), 'astreinte': (30, 0)},
+            emp4: {'annuel': (30, 7), 'astreinte': (30, 0)},
         }
         for user, balances in balance_data.items():
             for type_code, (acquis, pris) in balances.items():
@@ -127,32 +143,12 @@ class Command(BaseCommand):
                 'commentaire': 'Approuvé. Bonnes vacances!',
             },
             {
-                'employe': employe,
-                'type': types['maladie'],
-                'debut': today - timedelta(days=30),
-                'fin': today - timedelta(days=28),
-                'statut': 'approuve',
-                'motif': 'Grippe avec fièvre',
-                'traite_par': manager,
-                'commentaire': 'Approuvé. Bon rétablissement.',
-            },
-            {
                 'employe': emp2,
                 'type': types['annuel'],
                 'debut': today + timedelta(days=10),
                 'fin': today + timedelta(days=20),
                 'statut': 'en_attente',
                 'motif': 'Vacances estivales',
-                'traite_par': None,
-                'commentaire': '',
-            },
-            {
-                'employe': emp3,
-                'type': types['exceptionnel'],
-                'debut': today + timedelta(days=5),
-                'fin': today + timedelta(days=5),
-                'statut': 'en_attente',
-                'motif': 'Mariage de ma soeur',
                 'traite_par': None,
                 'commentaire': '',
             },
@@ -168,11 +164,11 @@ class Command(BaseCommand):
             },
             {
                 'employe': emp4,
-                'type': types['recuperation'],
+                'type': types['astreinte'],
                 'debut': today - timedelta(days=5),
                 'fin': today - timedelta(days=3),
                 'statut': 'approuve',
-                'motif': 'Récupération des heures supplémentaires',
+                'motif': 'Astreinte de nuit',
                 'traite_par': manager,
                 'commentaire': '',
             },

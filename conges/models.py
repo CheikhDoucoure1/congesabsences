@@ -59,8 +59,14 @@ class Employe(AbstractUser):
 
 
 class TypeConge(models.Model):
+    CATEGORIE_CHOICES = [
+        ('conge', 'Congé'),
+        ('absence', 'Absence'),
+    ]
+
     code = models.CharField(max_length=30, unique=True)
     libelle = models.CharField(max_length=100)
+    categorie = models.CharField(max_length=10, choices=CATEGORIE_CHOICES, default='conge')
     couleur = models.CharField(max_length=7, default='#2196F3')
     icone = models.CharField(max_length=50, default='fa-calendar')
     jours_max = models.PositiveIntegerField(default=30)
@@ -72,7 +78,7 @@ class TypeConge(models.Model):
     class Meta:
         verbose_name = "Type de congé"
         verbose_name_plural = "Types de congé"
-        ordering = ['libelle']
+        ordering = ['categorie', 'libelle']
 
     def __str__(self):
         return self.libelle
