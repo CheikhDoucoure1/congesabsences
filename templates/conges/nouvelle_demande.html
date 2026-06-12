@@ -39,7 +39,7 @@
               <label class="type-card" for="type_{{ type.id }}">
                 <input type="radio" name="type_conge" id="type_{{ type.id }}" value="{{ type.id }}"
                        class="type-radio" data-necessitejustif="{{ type.necessite_justificatif|lower }}"
-                       data-typeid="{{ type.id }}">
+                       data-typeid="{{ type.id }}" data-categorie="{{ type.categorie }}">
                 <div class="type-card-inner" style="--type-color: {{ type.couleur }}">
                   <div class="type-icon">
                     <i class="fas {{ type.icone }}"></i>
@@ -87,7 +87,7 @@
               </div>
             </div>
 
-            <div class="form-group">
+            <div class="form-group hidden" id="demiJourneeGroup">
               <label class="form-label">Options</label>
               <div class="checkbox-group">
                 <label class="checkbox-label">
@@ -121,11 +121,24 @@
               </div>
             </div>
 
-            <div class="form-group">
-              <label class="form-label required">Motif de la demande</label>
+            <div class="form-group hidden" id="motifGroup">
+              <label class="form-label required" id="motifLabel">Motif de l'absence</label>
               <textarea name="motif" id="motif" class="form-control" rows="4"
-                        placeholder="Décrivez brièvement la raison de votre demande..." required></textarea>
+                        placeholder="Décrivez brièvement la raison de votre absence..."></textarea>
               <div class="char-count"><span id="motifCount">0</span>/500 caractères</div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="interimaire">
+                <i class="fas fa-user-clock"></i> Personne intérimaire
+              </label>
+              <select name="interimaire" id="interimaire" class="form-control">
+                <option value="">— Sélectionner un(e) remplaçant(e) —</option>
+                {% for emp in employes_liste %}
+                <option value="{{ emp.id }}">{{ emp.get_full_name }} — {{ emp.poste }}</option>
+                {% endfor %}
+              </select>
+              <small class="form-hint">Employé(e) qui vous remplacera pendant votre absence</small>
             </div>
 
             <div class="form-group" id="justificatifGroup" style="display:none">
@@ -183,9 +196,13 @@
                 <span class="recap-label"><i class="fas fa-sun"></i> Durée</span>
                 <span class="recap-value" id="recapDuree">—</span>
               </div>
-              <div class="recap-item recap-full">
+              <div class="recap-item recap-full" id="recapMotifRow" style="display:none">
                 <span class="recap-label"><i class="fas fa-comment"></i> Motif</span>
                 <span class="recap-value" id="recapMotif">—</span>
+              </div>
+              <div class="recap-item recap-full">
+                <span class="recap-label"><i class="fas fa-user-clock"></i> Intérimaire</span>
+                <span class="recap-value" id="recapInterimaire">—</span>
               </div>
             </div>
 
@@ -254,16 +271,28 @@ function validateStep1() {
   document.getElementById('type-error').classList.add('hidden');
   const needsJustif = selected.dataset.necessitejustif === 'true';
   document.getElementById('justificatifGroup').style.display = needsJustif ? 'block' : 'none';
+  const isAbsence = selected.dataset.categorie === 'absence';
+  document.getElementById('motifGroup').classList.toggle('hidden', !isAbsence);
+  document.getElementById('motif').required = isAbsence;
+  document.getElementById('demiJourneeGroup').classList.toggle('hidden', !isAbsence);
+  if (!isAbsence) {
+    document.getElementById('demiJournee').checked = false;
+    toggleDemiJournee();
+  }
   return true;
 }
 
 function validateStep2() {
   const debut = document.getElementById('dateDebut').value;
   const fin = document.getElementById('dateFin').value;
-  const motif = document.getElementById('motif').value.trim();
   if (!debut || !fin) { alert('Veuillez renseigner les dates.'); return false; }
   if (fin < debut) { alert('La date de fin doit être après la date de début.'); return false; }
-  if (!motif) { alert('Le motif est requis.'); return false; }
+  const selected = document.querySelector('input[name="type_conge"]:checked');
+  const isAbsence = selected && selected.dataset.categorie === 'absence';
+  if (isAbsence && !document.getElementById('motif').value.trim()) {
+    alert('Le motif est requis pour une demande d\'absence.');
+    return false;
+  }
   return true;
 }
 
@@ -276,11 +305,19 @@ function fillRecap() {
   const duree = document.getElementById('durationValue').textContent;
   const motif = document.getElementById('motif').value;
 
+  const interimSelect = document.getElementById('interimaire');
+  const interimNom = interimSelect.value
+    ? interimSelect.options[interimSelect.selectedIndex].text
+    : '—';
+  const isAbsence = typeEl && typeEl.dataset.categorie === 'absence';
+
   document.getElementById('recapType').textContent = typeName;
   document.getElementById('recapDebut').textContent = debut ? formatDateFr(debut) : '—';
   document.getElementById('recapFin').textContent = fin ? formatDateFr(fin) : '—';
   document.getElementById('recapDuree').textContent = demi ? '0.5 jour' : `${duree} jour(s)`;
+  document.getElementById('recapMotifRow').style.display = isAbsence ? '' : 'none';
   document.getElementById('recapMotif').textContent = motif || '—';
+  document.getElementById('recapInterimaire').textContent = interimNom;
 }
 
 function formatDateFr(isoDate) {
@@ -352,9 +389,10 @@ document.querySelectorAll('.type-radio').forEach(radio => {
   });
 });
 
-document.getElementById('submitBtn').addEventListener('click', function() {
-  this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Envoi en cours...';
-  this.disabled = true;
+document.getElementById('demandeForm').addEventListener('submit', function() {
+  const btn = document.getElementById('submitBtn');
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Envoi en cours...';
+  btn.disabled = true;
 });
 </script>
 {% endblock %}

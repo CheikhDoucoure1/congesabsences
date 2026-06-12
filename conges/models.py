@@ -126,12 +126,16 @@ class DemandeConge(models.Model):
     reference = models.CharField(max_length=20, unique=True, blank=True)
     employe = models.ForeignKey(Employe, on_delete=models.CASCADE, related_name='demandes')
     type_conge = models.ForeignKey(TypeConge, on_delete=models.CASCADE)
+    interimaire = models.ForeignKey(
+        Employe, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='remplacements'
+    )
     date_debut = models.DateField()
     date_fin = models.DateField()
     demi_journee = models.BooleanField(default=False)
     periode_demi_journee = models.CharField(max_length=10, choices=DEMI_JOURNEE_CHOICES, blank=True)
     nombre_jours = models.DecimalField(max_digits=5, decimal_places=1, default=0)
-    motif = models.TextField()
+    motif = models.TextField(blank=True)
     justificatif = models.FileField(upload_to='justificatifs/', null=True, blank=True)
     statut = models.CharField(max_length=20, choices=STATUT_CHOICES, default='en_attente')
     date_soumission = models.DateTimeField(auto_now_add=True)

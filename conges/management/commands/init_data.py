@@ -30,7 +30,7 @@ class Command(BaseCommand):
         self.stdout.write('Création des types de congé...')
         types = {}
         conge_data = [
-            ('annuel',    'Congé annuel',    '#2196F3', 'fa-umbrella-beach', 30, False),
+            ('annuel',    'Congé annuel',    '#2196F3', 'fa-umbrella-beach', 24, False),
             ('maternite', 'Congé maternité', '#E91E63', 'fa-baby',           98, True),
             ('astreinte', 'Astreintes',      '#FF9800', 'fa-clock',          30, False),
         ]
@@ -111,13 +111,13 @@ class Command(BaseCommand):
 
         self.stdout.write('Création des soldes de congé...')
         balance_data = {
-            admin: {'annuel': (30, 0), 'astreinte': (30, 0)},
-            drh: {'annuel': (30, 5), 'astreinte': (30, 0)},
-            manager: {'annuel': (30, 8), 'astreinte': (30, 5)},
-            employe: {'annuel': (30, 12), 'astreinte': (30, 0)},
-            emp2: {'annuel': (30, 20), 'astreinte': (30, 3)},
-            emp3: {'annuel': (30, 3), 'astreinte': (30, 0)},
-            emp4: {'annuel': (30, 7), 'astreinte': (30, 0)},
+            admin: {'annuel': (24,0), 'astreinte': (30, 0)},
+            drh: {'annuel': (24,5), 'astreinte': (30, 0)},
+            manager: {'annuel': (24,8), 'astreinte': (30, 5)},
+            employe: {'annuel': (24,12), 'astreinte': (30, 0)},
+            emp2: {'annuel': (24,20), 'astreinte': (30, 3)},
+            emp3: {'annuel': (24,3), 'astreinte': (30, 0)},
+            emp4: {'annuel': (24,7), 'astreinte': (30, 0)},
         }
         for user, balances in balance_data.items():
             for type_code, (acquis, pris) in balances.items():
